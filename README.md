@@ -2,7 +2,10 @@
 
 ### catkin_ws ###
 
-This is the main catkin workspace for this project. It contains the drivers for the robot, the source files and the Python scripts we used to complete the pick and place task with the UR3 arm.
+This is the main catkin workspace for this project. It contains the drivers for the robot, the source files and the Python scripts we used to complete the pick and place task with the UR3 arm.  
+
+* src
+- lab4_exec
 
 ### skid4wd_ws ###
 
