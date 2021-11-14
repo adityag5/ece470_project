@@ -9,6 +9,10 @@ This Python file contains the basic implementation of our project update 1. It m
 ### Console-Output ###
 This is a text file to give a clearer look at the console logs that occur during the robot's movements.
 
-### catkin_ws###
+### catkin_ws ###
 
 This is the main catkin workspace for this project. It contains the drivers for the robot, the source files and the Python scripts we used to complete the pick and place task with the UR3 arm.
+
+### skid4wd_ws ###
+
+This it the catkin workspace used for building and moving the model for the cart. In the future, this directory is to be deleted as catkin_ws will contain the implementation for the moving cart integrated with the UR3 arm on it.
