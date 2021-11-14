@@ -1,0 +1,7 @@
+cart_controller:
+  type: velocity_controllers/JointVelocityController
+  joints:
+     - front_left_wheel_joint
+     - front_right_wheel_joint
+     - back_left_wheel_joint
+     - back_right_wheel_joint

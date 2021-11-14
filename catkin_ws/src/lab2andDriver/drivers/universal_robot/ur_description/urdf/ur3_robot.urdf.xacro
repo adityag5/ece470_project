@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"
+       name="ur3" >
+
+  <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+
+  <!-- common stuff -->
+  <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
+
+  <!-- skid4wd urdf -->
+  <!-- <xacro:include filename="$(find skid4wd_description)/urdf/skid4wd.xacro"/> -->
+
+  <xacro:include filename="$(find ur_description)/urdf/cart_robot_temp.urdf.xacro" />
+
+   <!-- ur3 urdf -->
+  <xacro:include filename="$(find ur_description)/urdf/ur3.urdf.xacro" />
+
+  <!-- arm -->
+  <xacro:ur3_robot prefix="" joint_limited="false"
+    transmission_hw_interface="$(arg transmission_hw_interface)"
+  />
+
+  <link name = "world" type="fixed" />
+
+  <joint name="world_link" type="fixed">
+    <parent link="world" />
+    <child link = "base_link_cart" />
+    <origin xyz="0.0 0.0 0.2" rpy="0.0 0.0 0.0" />
+  </joint>
+
+  <joint name="cart_link" type="fixed">
+    <parent link="base_link_cart" />
+    <child link = "base_link" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
+
+  <!-- <joint name="base_link_cart" type="fixed">
+    <parent link="base_link_skid" />
+    <child link = "base_link" />
+    <origin xyz="0.0 0.0 0.07524542881356616" rpy="0.0 0.0 0.0" />
+  </joint> -->
+
+</robot>
