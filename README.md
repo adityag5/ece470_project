@@ -5,9 +5,9 @@
 This is the main catkin workspace for this project. It contains the drivers for the robot, the source files and the Python scripts we used to complete the pick and place task with the UR3 arm.  
 
 * src/lab4pkg_py/scripts
-** lab4_exec.py - This file contains functions which enable movement in the robot arm and exectues the commands to pick up the block
-** lab4_func.py - This file contains the code to compute inverse and forward kinematics
-** spawn.py - This file spawns blocks in the Gazebo world.
+  * lab4_exec.py - This file contains functions which enable movement in the robot arm and exectues the commands to pick up the block
+  * lab4_func.py - This file contains the code to compute inverse and forward kinematics
+  * spawn.py - This file spawns blocks in the Gazebo world.
 
 ### skid4wd_ws ###
 
