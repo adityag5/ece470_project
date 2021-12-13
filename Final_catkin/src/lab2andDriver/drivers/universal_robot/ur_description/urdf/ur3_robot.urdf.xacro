@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro"
+       name="ur3" >
+
+  <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+
+  <!-- common stuff -->
+  <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
+
+  <!-- ur3 -->
+  <xacro:include filename="$(find ur_description)/urdf/ur3.urdf.xacro" />
+
+  <!-- arm -->
+  <xacro:ur3_robot prefix="" joint_limited="false"
+    transmission_hw_interface="$(arg transmission_hw_interface)"
+  /> 
+
+  <!-- skid4wd -->
+  <!-- <xacro:include filename="$(find skid4wd_description)/urdf/skid4wd.xacro" /> -->
+
+  <!-- diff drive robot-->
+  <!-- <xacro:include filename="$(find myrobot_description)/urdf/myrobot.xacro" /> -->
+
+  <!-- box -->
+  <include filename="$(find ur_description)/urdf/movingbox.urdf" />
+
+  <joint name="carpet_joint" type="fixed">
+    <parent link="base_footprint" />
+    <child link = "base_link" />
+    <origin xyz="0.0 0.0 0.00" rpy="0.0 0.0 0.0" /> <!-- offset + box thickness-->
+  </joint> 
+
+  <gazebo reference="base_footprint">
+    <turnGravityOff>True</turnGravityOff>
+  </gazebo>
+
+
+</robot>
