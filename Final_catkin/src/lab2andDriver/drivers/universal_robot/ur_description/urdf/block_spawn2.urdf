@@ -19,10 +19,10 @@
 
   <inertial>
    <origin xyz="0 0 0" rpy="0 0 0"/>
-   <mass value="0.2" />
+   <mass value="0.4" />
    <inertia
-      ixx="1000" ixy="0.0"  ixz="0.0"
-      iyy="1000" iyz="0.0"  izz="1000" />
+      ixx="10000" ixy="0.0"  ixz="0.0"
+      iyy="10000" iyz="0.0"  izz="10000" />
   </inertial>
 
 </link>

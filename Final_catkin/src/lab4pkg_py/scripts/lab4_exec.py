@@ -19,18 +19,12 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import math
 import random
-# from scipy.spatial.transform import Rotation as R
 
 # 20Hz
 SPIN_RATE = 20
 
-av = 2
-
 # UR3 home location
 home = np.radians([120, -90, 90, -90, -90, 0])
-
-# Project 1
-
 Q1 = np.radians([265.56,-46.91,102.02,-138.23,-88.45,35.74])
 Q2 = Q1 + np.radians([-180,0,0,0,0,0])
 
@@ -66,15 +60,7 @@ def quaternion_to_yaw(quaternions):
     y = quaternions[2]
     z = quaternions[3]
 
-    # #* Roll
-    # roll = math.atan2(2*(w*x + y*z), 1 - 2*((x**2) + (y**2)))
-    # #* Pitch
-    # pitch = 0
-    # sin_ang = 2*(w*y - z*x)
-    # pitch = math.asin(sin_ang)
-    #* Yaw
     yaw = math.atan2(2*(w*z + x*y),1 - 2*((y**2) + (z**2)))
-
     return yaw
 
 
@@ -122,10 +108,13 @@ def groundpos_callback(msg):
     global ground_position
     global ground_orientation
 
+    #* Get Pose of the Robot
     pose = msg.pose.pose 
     ground_position = pose.position
+    #* Get orientation of the robot
     orientation = pose.orientation
 
+    #* Convert to euler angle
     orientation_quaternions = [orientation.w,orientation.x,orientation.y,orientation.z]
     ground_orientation = quaternion_to_yaw(orientation_quaternions)
 
@@ -210,7 +199,7 @@ def move_block(pub_cmd, loop_rate, loc, end):
     error = 0
     return error
 
-def move_arm(pub_cmd, loop_rate, angles, vel, accel):    #
+def move_arm(pub_cmd, loop_rate, angles, vel, accel):    
     global thetas
     global SPIN_RATE
 
@@ -250,6 +239,19 @@ def move_arm(pub_cmd, loop_rate, angles, vel, accel):    #
 
     return error
 
+def calc_offsets(yaw):
+        theta = random.uniform(-1 * pi / 2,pi/2) +  yaw
+
+        R_spawn = 0.35
+
+        #* Offsets in Space Frame
+        x_offset = R_spawn * np.cos(theta)
+        y_offset = R_spawn * np.sin(theta)
+
+        return x_offset, y_offset, theta, R_spawn
+
+def xy_dist(x1,y1,x2,y2):
+    return np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 
 def main():
@@ -277,15 +279,15 @@ def main():
     # Initialize RosPack and node to spawn blocks
     rospack = rospkg.RosPack()
     
-    # Get path to block
+    # Get path to blocks
     block_path = rospack.get_path('ur_description')
     block_path_1 = os.path.join(block_path,'urdf','block_spawn.urdf')
     block_path_2 = os.path.join(block_path,'urdf','block_spawn2.urdf')
-    block_path_3 = os.path.join(block_path,'urdf','block_spawn3.urdf')
 
-
-    # Waiting for block spawning service to start
+    # Wait for service
     rospy.wait_for_service('gazebo/spawn_urdf_model')
+
+    # Create services
     spawn = rospy.ServiceProxy('gazebo/spawn_urdf_model', SpawnModel)
     delete = rospy.ServiceProxy('gazebo/delete_model', DeleteModel)
 
@@ -298,8 +300,8 @@ def main():
 
     cart_move = rospy.Publisher('/cmd_vel',Twist,queue_size=7)
 
-    #* World Destination
-    w_des = [1.0,0.5]
+    #* World Destination for robot to move to, provided by user through the shell
+    w_des = [float(sys.argv[1]),float(sys.argv[2])]
 
     #* Calculate the angle to move at 
     movement_angle = math.atan2(w_des[1],w_des[0])
@@ -307,12 +309,18 @@ def main():
     #* Create movement message
     movement = Twist()
 
+    #* Start Timer
+    start_time = time.time()
+
     #* Turn the car
-    while (abs(ground_orientation - movement_angle) > 0.01):
+    while (abs(ground_orientation - movement_angle) > 0.001):
         movement.linear.x = 0.00
         movement.linear.y = 0.00
 
-        movement.angular.z = 0.075 * np.sign(movement_angle)
+        if (abs(ground_orientation - movement_angle) > 0.01):
+            movement.angular.z = 0.075 * np.sign(movement_angle)
+        else: #Slower, finer turning when closer to the desired angle
+            movement.angular.z = 0.0075 * np.sign(movement_angle)
         cart_move.publish(movement)
 
     #* Reset all velocity to 0
@@ -336,31 +344,22 @@ def main():
     #* Flag to check if we are at the destination
     at_des = 0
 
-    def calc_offsets(yaw):
-        theta = random.uniform(-1 * pi / 2,pi/2) +  yaw
+    #* Flag to check if we failed to get close enough to the destination
+    failed = 0
 
-        # R_spawn = random.uniform(0.25,0.35)
-        R_spawn = 0.35
+    #* Minimum Error between Destination and Endpoint
+    min_error = [10000,10000]
+    min_error_magnitude = xy_dist(min_error[0],min_error[1],0,0)
 
-        #* Offsets in Space Frame
-        x_offset = R_spawn * np.cos(theta)
-        y_offset = R_spawn * np.sin(theta)
-
-        return x_offset, y_offset, theta, R_spawn
-
-    def xy_dist(x1,y1,x2,y2):
-        return np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    #* Error List
+    error_list = [min_error_magnitude]
 
     while (True):
-        #* Spawn Radius
-        # R_spawn = 0.35
-
         #* Tolerance for how close blocks can spawn together
+        tol = 0.3
 
         #* Values for 1st block
         x_offset_1, y_offset_1, theta1,R1 = calc_offsets(movement_angle)
-
-        print("Offsets: ",x_offset_1, y_offset_1)
 
         #* Spawn 1st Box
         starting_pose = Pose(Point(ground_position.x + x_offset_1, ground_position.y + y_offset_1, 0.01), Quaternion(qx,qy,qz,qw))
@@ -370,32 +369,17 @@ def main():
         #* Values for 2nd block
         x_offset_2, y_offset_2, theta2,R2 = calc_offsets(movement_angle) 
         dist_1_2 = xy_dist(x_offset_1,y_offset_1,x_offset_2,y_offset_2)
-        while (dist_1_2 < 0.3):
+        while (dist_1_2 < tol):
             x_offset_2, y_offset_2, theta2,R2 = calc_offsets(movement_angle)
             dist_1_2 = xy_dist(x_offset_1,y_offset_1,x_offset_2,y_offset_2)
-
 
         #* Spawn 2nd Box
         starting_pose = Pose(Point(ground_position.x + x_offset_2, ground_position.y + y_offset_2, 0.01), Quaternion(qx,qy,qz,qw))
         spawn("Block" + "_" + str(block_num), open(block_path_2, 'r').read(), 'block', starting_pose, 'world')
         block_num += 1
 
-        # #* Values for 3rd Block
-        # x_offset_3, y_offset_3, theta3,R3 = calc_offsets(movement_angle)
-        # dist_1_3 = xy_dist(x_offset_1,y_offset_1,x_offset_3,y_offset_3)
-        # dist_2_3 = xy_dist(x_offset_2,y_offset_2,x_offset_3,y_offset_3)
-        # while (dist_1_3 < 0.3 or dist_2_3 < 0.3):
-        #     x_offset_3, y_offset_3, theta3, R3 = calc_offsets(movement_angle)
-        #     dist_1_3 = xy_dist(x_offset_1,y_offset_1,x_offset_3,y_offset_3)
-        #     dist_2_3 = xy_dist(x_offset_2,y_offset_2,x_offset_3,y_offset_3)
-
-        # #* Spawn 3rd Block
-        # starting_pose = Pose(Point(ground_position.x + x_offset_3, ground_position.y + y_offset_3, 0.01), Quaternion(qx,qy,qz,qw))
-        # spawn("Block" + "_" + str(block_num), open(block_path_3, 'r').read(), 'block', starting_pose, 'world')
-        # block_num += 1
-
         #* Where the robot will place the block with respect to itself(constant)
-        pos_end = [0.15, 0.15, -0.05 - 0.05, 0]
+        pos_end = [0.15, 0.15, -0.05, 0]
         dist_from_cart = 0.15 + pos_end[0] # In robots x direction
 
         #* Decide which box to move
@@ -403,8 +387,6 @@ def main():
         y_pos = dist_from_cart * np.sin(movement_angle) 
         dist1 = xy_dist(x_offset_1,y_offset_1,x_pos,y_pos)
         dist2 = xy_dist(x_offset_2,y_offset_2,x_pos,y_pos)
-        # dist3 = xy_dist(x_offset_3,y_offset_3,x_pos,y_pos)
-        # dist_array = np.array([dist1,dist2,dist3])
         dist_array = np.array([dist1,dist2])
 
         R = 0
@@ -426,40 +408,20 @@ def main():
             theta_spawn = theta2
             R = R2
             delete("Block" + "_" + str(block_num - 2))
-        # else: # Block 3 is closest
-        #     theta_spawn = theta3
-        #     R = R3
-        #     delete("Block" + "_" + str(block_num - 2))
-        #     delete("Block" + "_" + str(block_num - 3))
-
-        # if (dist2 < dist1): #Delete the first block
-        #     delete("Block" + "_" + str(block_num - 2))
-        #     theta_spawn = theta2
-        #     x_offset = x_offset_2
-        #     y_offset = y_offset_2
-        # else: #Delete the second block
-        #     delete("Block" + "_" + str(block_num - 1))
-        #     theta_spawn = theta1
-        #     x_offset = x_offset_1
-        #     y_offset = y_offset_1
 
         #* Position of the box spawned with respect to the robot
         x_box_robot = R*np.sin(pi/2 - movement_angle + theta_spawn)
         y_box_robot = R*np.cos(pi/2 - movement_angle + theta_spawn)
 
+        #* Move the block
         pos_box = [x_box_robot - 0.15,-(y_box_robot - 0.15),-0.075,0]
-        # pos_end = [0.15, 0.15, -0.05 - 0.05, 0]
         status = move_block(pub_command, loop_rate, pos_box, pos_end)
         move_arm(pub_command, loop_rate, home, 4.0, 4.0)
         time.sleep(0.1)
 
         #* Position of the block thats been placed wrt the cart
-        # dist_from_ur3 = np.sqrt(pos_end[0]**2 + pos_end[1]**2)
         dist_from_cart = 0.15 + pos_end[0]
         #* Target destination of the cart in the world frame
-        # beta = math.atan2(.15,.15)
-        # x_pos = dist_from_cart * np.cos(beta)
-        # y_pos = dist_from_cart * np.sin(beta)
         x_pos = dist_from_cart * np.cos(movement_angle)
         y_pos = dist_from_cart * np.sin(movement_angle) 
         target_dest = np.add([ground_position.x,ground_position.y, ground_position.z,0],[x_pos, y_pos,0,0])
@@ -470,23 +432,42 @@ def main():
         movement.angular.y = 0.0
         cart_move.publish(movement)
 
-        while(at_block == 0 and at_des == 0):
-            # print("ERROR: ",abs(ground_position.x-target_dest[0]),abs(ground_position.y-target_dest[1]))
-            if (abs(ground_position.x-target_dest[0]) < 0.008 and abs(ground_position.y-target_dest[1]) < 0.008):
+        while(at_block == 0 and at_des == 0 and failed == 0):
+            #*Calculate Error between current position and endpoint 
+            error_world = [abs(ground_position.x-w_des[0]),abs(ground_position.y-w_des[1])]
+            error_magnitude = xy_dist(ground_position.x,ground_position.y,w_des[0],w_des[1])
+
+            #* Calculate Error between current position and next block
+            error_block = [abs(ground_position.x-target_dest[0]),abs(ground_position.y-target_dest[1])]
+
+            #* Update minimum error
+            if (error_magnitude < min_error_magnitude):
+                min_error_magnitude = error_magnitude
+                min_error_ = error_world
+
+            print("ERROR: ", error_world)
+
+            if (error_block[0] < 0.003 and error_block[1] < 0.003):
                 at_block = 1
 
-            if (abs(ground_position.x-w_des[0]) < 0.05 and abs(ground_position.y-w_des[1]) < 0.05):
+            if (error_magnitude < 0.08):
                 at_des = 1
 
-            print("ERROR: ",abs(ground_position.x-w_des[0]),abs(ground_position.y-w_des[1]))
-
+            if (error_magnitude > error_list[-1]):
+                failed = 1        
+            
+            error_list.append(error_magnitude)
 
             loop_rate.sleep()
 
+        #* Check if we reached the destination or failed to get to it
         if (at_des == 1):
-            print("REACHED DESTINATIONpenis")
+            print("REACHED DESTINATION")
             break
-
+        elif (failed == 1):
+            print("DID NOT REACH DESTINATION")
+            break
+            
         #* Stop car from moving
         movement.linear.x = 0.0
         movement.angular.z = 0.0
@@ -496,11 +477,17 @@ def main():
         #* Update Flag
         at_block = 0
 
+    end_time = time.time()
+
+    print("TIME TAKEN: ", end_time - start_time)
+    print("DESTINATION ERROR: ",abs(ground_position.x-w_des[0]),abs(ground_position.y-w_des[1]))
+    print("Z Position: ", ground_position.z )
+
+    #* Stop the car from moving
     movement.linear.x = 0.0
+    movement.linear.y = 0.0
     movement.angular.z = 0.0
-    movement.angular.y = 0
     cart_move.publish(movement)
-    
 
 if __name__ == '__main__':
 

@@ -19,7 +19,7 @@
 
   <node name="spawn_urdf1" pkg="gazebo_ros" type="spawn_model" args="-file $(find ur_description)/urdf/block_spawn.urdf -urdf -model big_block -z 0" /> 
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x 0.00 -y 0.00 -z 0.11" respawn="false" output="screen" />
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x 0.00 -y 0.00 -z 0.12" respawn="false" output="screen" />
   <!-- <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find myrobot_description)/urdf/movingbox.urdf -urdf -model test_model" /> -->
 
   <include file="$(find ur_gazebo)/launch/controller_utils.launch"/>

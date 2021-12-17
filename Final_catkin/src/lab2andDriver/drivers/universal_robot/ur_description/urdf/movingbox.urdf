@@ -23,7 +23,7 @@
       <origin xyz="0 0 0" />
       <inertia ixx="50.0" ixy="0.0" ixz="0.0"
         iyy="50.0" iyz="0.0"
-        izz="50.0" />
+        izz="50000.0" />
     </inertial>
     <visual>
       <geometry>
