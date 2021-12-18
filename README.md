@@ -21,3 +21,4 @@ rosrun lab4pkg_py lab4_exec.py 3 1
   * movingbox.urdf - This file contains the urdf model for the cart and the planar move plugin that allows for control and pose subscription of the cart 
   * block_spawn.urdf and block_spawn2.urdf - These contains models of the blocks that are spawned for picking and placing
   * ur3_robot.urdf.xacro - This contains the joint model of the robot and the cart
+
