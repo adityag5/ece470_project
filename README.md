@@ -9,11 +9,14 @@ This is the final updated catkin workspace for the project. It contains the driv
   * lab4_func.py - This file contains the code to compute inverse and forward kinematics
 
 The lab4_exec.py script is run with 2 arguments. The first is the desired x waypoint, and the second is the desired y waypoint. For example, if the user wants the robot/cart to move to an x position of 3, and a y position of 1, the user would input:
-
+```
 rosrun lab4pkg_py lab4_exec.py 3 1
-
+```
 * lab2andDriver/drivers/universal_robot/ur_description
   * movingbox.urdf - This file contains the urdf model for the cart and the planar move plugin that allows for control and pose subscription of the cart 
+  * block_spawn.urdf and block_spawn2.urdf - These contains models of the blocks that are spawned for picking and placing
+  * ur3_robot.urdf.xacro - This contains the joint model of the robot and the cart
+  
 
 
 
