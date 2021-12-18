@@ -5,7 +5,8 @@
 This is the final updated catkin workspace for the project. It contains the drivers for the robot, the source files and the Python scripts we used to complete the pick and place task with the UR3 arm.  
 
 To launch the Gazebo simulation environment, the user can run the following command within the workspace:
-```roslaunc ur3_driver ur3_gazebo.launch
+```
+roslaunch ur3_driver ur3_gazebo.launch
 ```
 
 * src/lab4pkg_py/scripts
